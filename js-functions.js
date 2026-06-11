@@ -17,7 +17,7 @@ const students = [
     {
         name:"Anjali",
         course: "Full Stack Development",
-        marks:[19, 16, 22, 27, 24]
+        marks:[9, 6, 2, 7, 4]
     }
 ]
 
@@ -47,3 +47,7 @@ const updatedStudentData = students.map(student=>{
 });
 
 console.log(updatedStudentData);
+
+// Use filter function to get the students who have passed the course
+
+// Use filter function to get the students who have failed the course
