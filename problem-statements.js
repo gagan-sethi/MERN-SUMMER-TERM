@@ -1,6 +1,5 @@
 //You are given an array of customer orders from an online store. Each order contains customer details, purchased items, quantity, price, discount, and payment status.
 
-
 const orders = [
   {
     orderId: "ORD101",
@@ -55,6 +54,31 @@ const orders = [
   grossAmount: 56600,
   totalDiscount: 5580,
   netAmount: 51020,
-  orderStatus: "Successful",
-  rewardPoints: 510
+  orderStatus: "Successful"
 } */
+
+const orderAnalyticsReport = orders.map(order => {
+  const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
+
+  const grossAmount = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  const totalDiscount = order.items.reduce((sum, item) => sum + ((item.price * item.quantity) * (item.discount / 100)), 0);
+
+  const netAmount = grossAmount - totalDiscount;
+  const orderStatus = order.paymentStatus === "Paid" ? "Successful" : "Unsuccessful";
+
+  return {
+    orderId: order.orderId,
+    customerName: order.customerName,
+    city: order.city,
+    paymentStatus: order.paymentStatus,
+    totalItems: totalItems,
+    grossAmount,
+    totalDiscount,
+    netAmount,
+    orderStatus
+  }
+});
+
+
+console.log("Order Analytics Report:", orderAnalyticsReport);
