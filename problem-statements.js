@@ -68,9 +68,6 @@ const orderAnalyticsReport = orders.map(order => {
   const orderStatus = order.paymentStatus === "Paid" ? "Successful" : "Unsuccessful";
 
   return {
-    orderId: order.orderId,
-    customerName: order.customerName,
-    city: order.city,
     paymentStatus: order.paymentStatus,
     totalItems: totalItems,
     grossAmount,
