@@ -16,7 +16,10 @@ function App(){
  const [cartItems, setCartItems] = useState([]);
 
   function addToCart(product){
-   setCartItems((previousCartItems) =>{
+    if(!product){
+      return;
+    }
+    setCartItems((previousCartItems) =>{
     const productAlreadyInCart= previousCartItems.find((item)=>item.id==product.id);
 
       if(productAlreadyInCart){

@@ -6,24 +6,28 @@ function Home({addToCart}) {
   const [btnText, setBtnText]= useState('Hello');
   const products = [
     {
+      id:101,
       name: 'Cartoon Key Chain',
       description: 'Colorful and cute design.',
       price: 99,
       image: '/images/shopping.webp'
     },
     {
+       id:102,
       name: 'Name Key Chain',
       description: 'Customized with your name.',
       price: 149,
       image: '/images/name.webp'
     },
     {
+       id:103,
       name: 'Leather Key Chain',
       description: 'Premium and classy look.',
       price: 199,
       image: '/images/leather.jpg'
     },
     {
+       id:104,
       name: 'Avengers Key Chain',
       description: 'Your super hero key chain.',
       price: 210,
@@ -64,7 +68,7 @@ function Home({addToCart}) {
             <h3>{product.name}</h3>
             <p>{product.description}</p>
             <strong>₹{product.price}</strong>
-            <button className="cartBtn" onClick={addToCart}>Add to Cart</button>
+            <button className="cartBtn" onClick={()=> addToCart(product)}>Add to Cart</button>
         </div>
       
     ))}
