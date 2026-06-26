@@ -1,6 +1,6 @@
 import {Link} from 'react-router-dom';
 
-function Cart({cartItems}){
+function Cart({cartItems, increaseQuantity, decreaseQuantity}){
     console.log(cartItems);
     const totalAmount= cartItems.reduce((total, item)=> total + item.price*item.quantity, 0);
 
@@ -33,11 +33,11 @@ function Cart({cartItems}){
                                 <p>₹{item.price} each</p>
 
                                 <div className="quantityBox">
-                                    <button>
+                                    <button onClick={()=>decreaseQuantity(item.id)}>
                                         -
                                     </button>
                                     <span>{item.quantity}</span>
-                                    <button>
+                                    <button onClick={()=>increaseQuantity(item.id)}>
                                         +
                                     </button>
                                 </div>

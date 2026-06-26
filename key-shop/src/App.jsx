@@ -31,6 +31,22 @@ function App(){
     })
   }
  
+  function increaseQuantity(productId){
+    setCartItems((previousCartItems)=>{
+      return previousCartItems.map((item)=>{
+        return item.id == productId ? {...item, quantity:item.quantity+1} : item ;
+      });
+    });
+  }
+
+  function descreaseQuantity(productId){
+    setCartItems((previousCartItems)=>{
+     return previousCartItems.map((item)=>{
+        return item.id==productId ? {...item, quantity:item.quantity-1 } : item;
+      }).filter((item) => item.quantity > 0)
+    })
+  }
+
   const cartCount = cartItems.reduce((total, item)=> total + item.quantity, 0);
   
 
@@ -44,7 +60,7 @@ function App(){
             <Route path="/products" element={<Products />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact-us" element={<Contact />} />
-            <Route path="/cart" element =  {<Cart cartItems={cartItems}/>} />
+            <Route path="/cart" element =  {<Cart cartItems={cartItems} increaseQuantity={increaseQuantity} decreaseQuantity={descreaseQuantity} />} />
           </Routes>
         </main>
         <Footer />
