@@ -47,6 +47,10 @@ function App(){
     })
   }
 
+  function clearCart(){
+    setCartItems([]);
+  }
+
   const cartCount = cartItems.reduce((total, item)=> total + item.quantity, 0);
   
 
@@ -60,7 +64,7 @@ function App(){
             <Route path="/products" element={<Products />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact-us" element={<Contact />} />
-            <Route path="/cart" element =  {<Cart cartItems={cartItems} increaseQuantity={increaseQuantity} decreaseQuantity={descreaseQuantity} />} />
+            <Route path="/cart" element =  {<Cart cartItems={cartItems} increaseQuantity={increaseQuantity} decreaseQuantity={descreaseQuantity} clearCart={clearCart}/>} />
           </Routes>
         </main>
         <Footer />
