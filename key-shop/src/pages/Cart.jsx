@@ -1,9 +1,13 @@
 import {Link} from 'react-router-dom';
+import {useState} from 'react';
 
 function Cart({cartItems, increaseQuantity, decreaseQuantity, clearCart}){
     console.log(cartItems);
     const totalAmount= cartItems.reduce((total, item)=> total + item.price*item.quantity, 0);
     const totalItems = cartItems.reduce((total,item)=>total + item.quantity, 0);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [showItemConfirmation, setShowItemConfirmation] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
 
     if(cartItems.length === 0){
         return (
@@ -16,11 +20,26 @@ function Cart({cartItems, increaseQuantity, decreaseQuantity, clearCart}){
         )
     }
 
+    const handleClearCart = () => {
+        const confirmClear = window.confirm("Are you sure you want to clear the cart?");
+        if (confirmClear) {
+            clearCart();
+        }
+    }
+    const handleDecreaseQuantity = (item) => {
+        if (item.quantity === 1) {
+            setSelectedItem(item);
+            setShowItemConfirmation(true);
+        }else{
+            decreaseQuantity(item.id);
+        }
+    }
+
    return (
     <section className="cartPage">
         <div className="cartHeading">
             <h1>Your Shopping Cart</h1>
-            <button className="clearCartBtn" onClick={clearCart}>Clear Cart</button>
+            <button className="clearCartBtn" onClick={()=>setShowConfirmation(true)}>Clear Cart</button>
         </div>
         
         <div className="cartLayout">
@@ -35,7 +54,7 @@ function Cart({cartItems, increaseQuantity, decreaseQuantity, clearCart}){
                                 <p>₹{item.price} each</p>
 
                                 <div className="quantityBox">
-                                    <button onClick={()=>decreaseQuantity(item.id)}>
+                                    <button onClick={()=>handleDecreaseQuantity(item)}>
                                         -
                                     </button>
                                     <span>{item.quantity}</span>
@@ -80,8 +99,52 @@ function Cart({cartItems, increaseQuantity, decreaseQuantity, clearCart}){
       
         </div>
 
-       
+        {/* Confirmation Modal For Clearing Cart */}
+        { showConfirmation && (
+                <div className="modal">
+                    <div className="modalContent">
+                        <h3>Clear Cart?</h3>
+                        <p>Are you sure you want to remove all items?</p>
 
+                        <button
+                            onClick={() => {
+                                clearCart();
+                                setShowConfirmation(false);
+                            }}
+                        >
+                            Yes
+                        </button>
+
+                        <button onClick={() => setShowConfirmation(false)}>
+                            No
+                        </button>
+                    </div>
+                </div>
+            )  }
+
+        {/* Confirmation Modal For Clearing Specific Item  */}
+
+        { showItemConfirmation && (
+                <div className="modal">
+                    <div className="modalContent">
+                        <h3>Clear Item?</h3>
+                        <p>Are you sure you want to remove {" "} <strong>{selectedItem.name}</strong>?</p>
+
+                        <button
+                            onClick={() => {
+                                decreaseQuantity(selectedItem.id);
+                                setShowItemConfirmation(false);
+                            }}
+                        >
+                            Yes
+                        </button>
+
+                        <button onClick={() => setShowItemConfirmation(false)}>
+                            No
+                        </button>
+                    </div>
+                </div>
+            )  }
     </section>
    )
 }
