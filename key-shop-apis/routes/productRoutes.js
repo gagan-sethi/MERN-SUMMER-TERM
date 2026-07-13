@@ -95,5 +95,36 @@ router.get("/search", async (req, res) => {
         });
     } 
 });
+//API to update a product in the database
+router.put("/update-product/:id", async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const { name, description, price, image, stock } = req.body;
+
+        const updatedProduct = await Product.findByIdAndUpdate(
+            productId,
+            { name, description, price, image, stock },
+            { new: true }
+        );
+
+        if (!updatedProduct) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            product: updatedProduct
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Unable to update product"
+        });
+    }
+});
 
 module.exports = router;
