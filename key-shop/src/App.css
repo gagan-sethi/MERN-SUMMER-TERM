@@ -455,3 +455,14 @@ color:#d97706;
     background-color: lightgray;
     color: #111827;
   }
+
+  /* Login Modal Styles */
+
+  .modalOverlay{
+    position:relative;
+    width: 100%;
+    max-width: 440px;
+    padding:30px;
+    border-radius: 18px;
+    background:white;
+  }
