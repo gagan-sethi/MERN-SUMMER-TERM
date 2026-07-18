@@ -24,6 +24,7 @@ router.get("/", async (req, res) => {
 // API to save a new product to the database
 router.post("/save-new-product", async (req, res) => {
     try {
+        console.log(req.body);
         const { name, description, price, image, stock } = req.body;
 
         const newProduct = new Product({
@@ -113,7 +114,6 @@ router.put("/update-product/:id", async (req, res) => {
                 message: "Product not found"
             });
         }
-
         res.status(200).json({
             success: true,
             product: updatedProduct

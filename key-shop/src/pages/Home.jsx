@@ -1,43 +1,31 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 
 function Home({addToCart}) {
 
   const [counter, setCounter] = useState(10);
   const [btnText, setBtnText]= useState('Hello');
-  const products = [
-    {
-      id:101,
-      name: 'Cartoon Key Chain',
-      description: 'Colorful and cute design.',
-      price: 99,
-      image: '/images/shopping.webp',
-      stock:10
-    },
-    {
-       id:102,
-      name: 'Name Key Chain',
-      description: 'Customized with your name.',
-      price: 149,
-      image: '/images/name.webp',
-      stock:5
-    },
-    {
-       id:103,
-      name: 'Leather Key Chain',
-      description: 'Premium and classy look.',
-      price: 199,
-      image: '/images/leather.jpg',
-      stock:3
-    },
-    {
-       id:104,
-      name: 'Avengers Key Chain',
-      description: 'Your super hero key chain.',
-      price: 210,
-      image: '/images/captain.webp',
-      stock:2
-    }
-  ];
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(()=>{
+    const fetchProducts= async ()=>{
+      try{
+        const response = await fetch("http://localhost:3000/api/products");
+        if(!response.ok){
+          throw new Error("Unable to fetch products");
+        }
+        const data= await response.json();
+        setProducts(data.products);
+      }catch(error){
+        console.error("Product API error", error);
+        setError("Unable to load products, Please try again later!");
+      }finally{
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   return (
     <div className="app">
@@ -60,6 +48,14 @@ function Home({addToCart}) {
       { /* Product Section */}
      <section className="products">
       <h2>Our Popular Key Chains</h2>
+
+      {loading && <p>Loading Products...</p>}
+
+      {error && <p className="errorMessage">{error}</p>}
+
+      {!loading && !error && products.length == 0 && (
+        <p>No Products available!!</p>
+      )}
 
       <div className="productGrid">
 

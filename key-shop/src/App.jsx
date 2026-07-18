@@ -91,7 +91,7 @@ function App(){
         <main>
           <Routes>
             <Route path="/" element={<Home addToCart={addToCart} />} />
-            <Route path="/products" element={<Products />} />
+            <Route path="/products" element={<Products addToCart={addToCart} />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact-us" element={<Contact />} />
             <Route path="/cart" element =  {<Cart cartItems={cartItems} increaseQuantity={increaseQuantity} decreaseQuantity={descreaseQuantity} clearCart={clearCart}/>} />
