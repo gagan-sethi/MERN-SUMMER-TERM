@@ -35,6 +35,13 @@ function Products({addToCart}) {
 
   const [searchText, setSearchText]= useState("");
   const [selectedCategory, setSelectedCategory]= useState("All");
+   const [selectedPrice, setSelectedPrice]= useState("All");
+
+   function clearFilters(){
+    setSelectedCategory("All");
+    setSelectedPrice("All");
+    setSearchText("")
+   }
 
   const filteredProducts= products.filter((product)=>{
     const matchesSearch=product.name.toLowerCase().includes(searchText.toLowerCase());
@@ -50,6 +57,35 @@ function Products({addToCart}) {
       <div className="productsBanner">
         <h1>Our Products</h1>
         <p>Explore stylish, customized and premium key chains.</p>
+      </div>
+
+      <div className="productFilter">
+        <input type="text" placeholder="Search Products..." value={searchText} onChange={(event)=>setSearchText(event.target.value)} className="productSearch" />
+
+        <select value={selectedCategory} onChange={(event)=>setSelectedCategory(event.target.value)}>
+          <option value="All">All Categories</option>
+          <option value="Cartoon">Cartoon</option>
+          <option value="Metal">Metal</option>
+          <option value="Customized">Customized</option>
+          <option value="Premium">Premium</option>
+        </select>
+
+
+        <select value={selectedPrice} onChange={(event)=>setSelectedPrice(event.target.value)}>
+          <option value="All">All</option>
+          <option value="Below 150">Below ₹150</option>
+          <option value="150 to 250">₹150 to ₹250</option>
+          <option value="Above 250">Above ₹250</option>
+        </select>
+
+        <button type="button" className="clearFilterBtn" onClick={clearFilters}>
+          Clear Filters
+        </button>
+      </div>
+
+      <div className="productResults">
+        <p>Showing <strong>{filteredProducts.length}</strong> products</p>
+
       </div>
     </section>
   );
