@@ -1,6 +1,8 @@
 const express= require("express");
 const Product = require("./models/Product.js");
 const productRoutes = require("./routes/productRoutes.js");
+const authRoutes = require("./routes/authRoutes.js");
+const paymentRoutes = require("./routes/paymentRoutes.js");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
@@ -17,6 +19,8 @@ mongoose.connect(process.env.MONGO_URI)
 .catch((err) => console.log(err));
 
 app.use("/api/products", productRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.use("/", (req, res) => {
     res.send("Welcome to the Key Shop API Backend!");
@@ -25,4 +29,3 @@ app.use("/", (req, res) => {
 app.listen(process.env.PORT || 5000, () => {
   console.log(`Server is running on port ${process.env.PORT || 5000}`);
 });
-

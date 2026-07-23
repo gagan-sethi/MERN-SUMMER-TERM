@@ -19,42 +19,29 @@ function App(){
     if(!product){
       return;
     }
-    setCartItems((previousCartItems) =>{
-    const productAlreadyInCart= previousCartItems.find((item)=>item.id==product.id);
+    const normalizedProduct = {...product, id: product.id ?? product._id};
+    const quantity = cartItems.find((item) => item.id == normalizedProduct.id)?.quantity ?? 0;
 
-      if(productAlreadyInCart){
-        
-        return previousCartItems.map((item)=>{
-          return item.id==product.id ? {...item, quantity: item.quantity + 1 } : item;
-        });
-        
-      } 
-     
-      console.log(product);
-      return [...previousCartItems, {...product, quantity: 1}];
-    })
-
-        // Quantity of one product
-    const quantity = cartItems.find(item => item.id === product.id)?.quantity ?? 0;
-
-    console.log(`Quantity of product ${product.id}: ${quantity}`);
-
-    // Total quantity of all products
-    const cartCount = cartItems.reduce(
-      (total, item) => total + item.quantity,
-      0
-    );
-    
-    //product.quantity= product.quantity ? product.quantity+1 : 1;
-
-    console.log(product);
-
-    if(product.stock < quantity + 1){
+    if(Number.isFinite(product.stock) && quantity >= product.stock){
       toast.error(`Sorry, ${product.name} is out of stock!`, {
         id:"cart-toast"
       });
       return;
     }
+
+    setCartItems((previousCartItems) =>{
+    const productAlreadyInCart= previousCartItems.find((item)=>item.id==normalizedProduct.id);
+
+      if(productAlreadyInCart){
+        
+        return previousCartItems.map((item)=>{
+          return item.id==normalizedProduct.id ? {...item, quantity: item.quantity + 1 } : item;
+        });
+        
+      } 
+     
+      return [...previousCartItems, {...normalizedProduct, quantity: 1}];
+    })
     toast.success(`${product.name} worth ₹${product.price} added to the cart successfully!`, {
       id:"cart-toast"
     });
@@ -81,6 +68,10 @@ function App(){
     setCartItems([]);
   }
 
+  function removeItem(productId){
+    setCartItems((previousCartItems) => previousCartItems.filter((item) => item.id != productId));
+  }
+
   const cartCount = cartItems.reduce((total, item)=> total + item.quantity, 0);
   
 
@@ -94,7 +85,7 @@ function App(){
             <Route path="/products" element={<Products addToCart={addToCart} />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact-us" element={<Contact />} />
-            <Route path="/cart" element =  {<Cart cartItems={cartItems} increaseQuantity={increaseQuantity} decreaseQuantity={descreaseQuantity} clearCart={clearCart}/>} />
+            <Route path="/cart" element =  {<Cart cartItems={cartItems} increaseQuantity={increaseQuantity} decreaseQuantity={descreaseQuantity} removeItem={removeItem} clearCart={clearCart}/>} />
           </Routes>
         </main>
          <Toaster  

@@ -87,6 +87,12 @@ function Products({addToCart}) {
         <p>Showing <strong>{filteredProducts.length}</strong> products</p>
 
       </div>
+      {filteredProducts.length >0 && (
+        <div className="productGrid">
+          { /*filteredProducts.map() */}
+
+        </div>
+      )}
     </section>
   );
 }

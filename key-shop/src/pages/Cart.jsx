@@ -1,274 +1,273 @@
-import {Link} from 'react-router-dom';
-import {useState} from 'react';
+import { Link } from "react-router-dom";
+import { useState } from "react";
 
-function Cart({cartItems, increaseQuantity, decreaseQuantity, clearCart}){
-    console.log(cartItems);
-    const totalAmount= cartItems.reduce((total, item)=> total + item.price*item.quantity, 0);
-    const totalItems = cartItems.reduce((total,item)=>total + item.quantity, 0);
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const SESSION_KEY = "keyShopSession";
+
+function getSavedSession() {
+    try {
+        return JSON.parse(sessionStorage.getItem(SESSION_KEY)) || null;
+    } catch {
+        return null;
+    }
+}
+
+function loadRazorpayCheckout() {
+    if (window.Razorpay) return Promise.resolve(true);
+
+    return new Promise((resolve) => {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+    });
+}
+
+function Cart({ cartItems, increaseQuantity, decreaseQuantity, removeItem, clearCart }) {
+    const totalAmount = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+    const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showItemConfirmation, setShowItemConfirmation] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
-
-    //Login States
     const [showLogin, setShowLogin] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [loggedInUser, setLoggedInUser] = useState(null);
+    const [session, setSession] = useState(getSavedSession);
+    const [loginData, setLoginData] = useState({ username: "", password: "" });
+    const [loginError, setLoginError] = useState("");
+    const [checkoutMessage, setCheckoutMessage] = useState("");
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    const [loginData, setLoginData] = useState({
-        email: '',
-        password: ''
-    });
-
-    const [loginError, setLoginError] = useState({});
-    const [loginMessage, setLoginMessage] = useState('');
-
-
-    const handleLoginInput = (e) => {
-        const { name, value } = e.target;
-        setLoginData(prevData => ({
-            ...prevData,
-            [name]: value
-        }));
-
-        setLoginError(prevError => ({
-            ...prevError,
-            [name]: ''
-        }));
-
-        setLoginMessage('');
+    const handleLoginInput = (event) => {
+        const { name, value } = event.target;
+        setLoginData((current) => ({ ...current, [name]: value }));
+        setLoginError("");
     };
 
-    const validateLogin = () =>{
-        const errors = {};
-        if(!loginData.email){
-            errors.email = "Email is required";
-        }else if(!/\S+@\S+\.\S+/.test(loginData.email)){
-            errors.email = "Please enter a valid email address";
-        }
-        if(!loginData.password){
-            errors.password = "Password is required";
-        }else if(loginData.password.length < 6){
-            errors.password = "Password must be at least 6 characters long";
-        }       
-        return errors;
-    }
-
-    const handleLogin =(e) =>{
-        e.preventDefault();
-        const errors = validateLogin();
-        if(Object.keys(errors).length > 0){
-            setLoginError(errors);
-            return;
-        }
-
-        setIsLoggedIn(true);
-        setLoggedInUser(loginData.email);
-        setLoginMessage("Login successful!");
-        
-        setShowLogin(false);
-        handleCheckOut();
-    }
-
-    const handleCheckOut =  () => {
-        if(!isLoggedIn){
+    const startPayment = async (activeSession = session) => {
+        if (!activeSession?.token) {
             setShowLogin(true);
             return;
         }
-        alert("Checkout started successfully!!");
-    }
 
+        setIsProcessing(true);
+        setCheckoutMessage("");
 
+        try {
+            const sdkLoaded = await loadRazorpayCheckout();
+            if (!sdkLoaded) throw new Error("Unable to load Razorpay Checkout");
 
-        // Simulate login process
-        
+            const orderResponse = await fetch(`${API_URL}/api/payments/orders`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${activeSession.token}`
+                },
+                body: JSON.stringify({
+                    items: cartItems.map((item) => ({
+                        productId: item.id,
+                        quantity: item.quantity
+                    }))
+                })
+            });
+            const orderData = await orderResponse.json();
 
+            if (orderResponse.status === 401) {
+                sessionStorage.removeItem(SESSION_KEY);
+                setSession(null);
+                setShowLogin(true);
+            }
+            if (!orderResponse.ok) throw new Error(orderData.message || "Unable to start payment");
 
-    if(cartItems.length === 0){
-        return (
-        <section className="cartPage emptyCart">
-            <h1>Your Cart is Empty</h1>
-            <p>You have not added any key chain yet</p>
+            const checkout = new window.Razorpay({
+                key: orderData.keyId,
+                amount: orderData.order.amount,
+                currency: orderData.order.currency,
+                name: "Key Shop",
+                description: `${totalItems} key chain${totalItems === 1 ? "" : "s"}`,
+                order_id: orderData.order.id,
+                handler: async (payment) => {
+                    try {
+                        const verifyResponse = await fetch(`${API_URL}/api/payments/verify`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${activeSession.token}`
+                            },
+                            body: JSON.stringify(payment)
+                        });
+                        const verifyData = await verifyResponse.json();
+                        if (!verifyResponse.ok) {
+                            throw new Error(verifyData.message || "Payment verification failed");
+                        }
 
-            <Link to="/" class="continueShoppingBtn">Continue Shopping</Link>
-        </section>
-        )
-    }
+                        clearCart();
+                        setCheckoutMessage(`Payment successful. Payment ID: ${verifyData.paymentId}`);
+                    } catch (error) {
+                        setCheckoutMessage(error.message);
+                    } finally {
+                        setIsProcessing(false);
+                    }
+                },
+                prefill: { name: activeSession.username },
+                theme: { color: "#d97706" },
+                modal: { ondismiss: () => setIsProcessing(false) }
+            });
 
-    const handleClearCart = () => {
-        const confirmClear = window.confirm("Are you sure you want to clear the cart?");
-        if (confirmClear) {
-            clearCart();
+            checkout.on("payment.failed", (response) => {
+                setCheckoutMessage(response.error?.description || "Payment failed. Please try again.");
+                setIsProcessing(false);
+            });
+            checkout.open();
+        } catch (error) {
+            setCheckoutMessage(error.message);
+            setIsProcessing(false);
         }
-    }
+    };
+
+    const handleLogin = async (event) => {
+        event.preventDefault();
+        setLoginError("");
+
+        if (!loginData.username.trim() || !loginData.password) {
+            setLoginError("Username and password are required");
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/api/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(loginData)
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Login failed");
+
+            const nextSession = { username: data.username, token: data.token };
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
+            setSession(nextSession);
+            setShowLogin(false);
+            setLoginData({ username: "", password: "" });
+            await startPayment(nextSession);
+        } catch (error) {
+            setLoginError(error.message);
+        }
+    };
+
+    const handleCheckout = () => {
+        if (!session) {
+            setShowLogin(true);
+            return;
+        }
+        startPayment();
+    };
+
     const handleDecreaseQuantity = (item) => {
         if (item.quantity === 1) {
             setSelectedItem(item);
             setShowItemConfirmation(true);
-        }else{
+        } else {
             decreaseQuantity(item.id);
         }
+    };
+
+    if (cartItems.length === 0) {
+        return (
+            <section className="cartPage emptyCart">
+                <h1>Your Cart is Empty</h1>
+                {checkoutMessage ? <p className="checkoutSuccess">{checkoutMessage}</p> : (
+                    <p>You have not added any key chain yet</p>
+                )}
+                <Link to="/" className="continueShoppingBtn">Continue Shopping</Link>
+            </section>
+        );
     }
 
-   return (
-    <section className="cartPage">
-        <div className="cartHeading">
-            <h1>Your Shopping Cart</h1>
-            <button className="clearCartBtn" onClick={()=>setShowConfirmation(true)}>Clear Cart</button>
-        </div>
-        
-        <div className="cartLayout">
-            
-            <div class="cartItems">
-                {
-                    cartItems.map((item)=>(
-                        <div className="cartItem">
+    return (
+        <section className="cartPage">
+            <div className="cartHeading">
+                <h1>Your Shopping Cart</h1>
+                <button className="clearCartBtn" onClick={() => setShowConfirmation(true)}>Clear Cart</button>
+            </div>
+
+            <div className="cartLayout">
+                <div className="cartItems">
+                    {cartItems.map((item) => (
+                        <div className="cartItem" key={item.id}>
                             <img src={item.image} alt={item.name} />
                             <div className="cartItemDetails">
                                 <h3>{item.name}</h3>
                                 <p>₹{item.price} each</p>
-
                                 <div className="quantityBox">
-                                    <button onClick={()=>handleDecreaseQuantity(item)}>
-                                        -
-                                    </button>
+                                    <button onClick={() => handleDecreaseQuantity(item)} aria-label={`Decrease ${item.name} quantity`}>−</button>
                                     <span>{item.quantity}</span>
-                                    <button onClick={()=>increaseQuantity(item.id)}>
-                                        +
-                                    </button>
+                                    <button onClick={() => increaseQuantity(item.id)} aria-label={`Increase ${item.name} quantity`}>+</button>
                                 </div>
                             </div>
-
                             <div className="cartItemRight">
-                             <strong>₹{item.price * item.quantity}</strong>
-                             <button className="removeBtn">
-                                Remove
-                             </button>
+                                <strong>₹{item.price * item.quantity}</strong>
+                                <button className="removeBtn" onClick={() => removeItem(item.id)}>Remove</button>
                             </div>
-
                         </div>
-                    ))
-                }
+                    ))}
+                </div>
 
+                <div className="cartSummary">
+                    <h2>Order Summary</h2>
+                    <div className="summaryRow"><span>Total Items</span><strong>{totalItems}</strong></div>
+                    <div className="summaryRow totalRow"><span>Total Amount</span><strong>₹{totalAmount}</strong></div>
+                    {session && <p className="loggedInAs">Signed in as <strong>{session.username}</strong></p>}
+                    {checkoutMessage && <p className="checkoutMessage">{checkoutMessage}</p>}
+                    <button className="checkOutBtn" onClick={handleCheckout} disabled={isProcessing}>
+                        {isProcessing ? "Starting secure payment…" : session ? "Pay with Razorpay" : "Login to Checkout"}
+                    </button>
+                    <Link to="/" className="continueLink">Continue Shopping</Link>
+                </div>
             </div>
 
-             <div className="cartSummary">
-                <h2>Order Summary</h2>
-
-                <div className="summaryRow">
-                    <span>Total Items</span>
-                    <strong>
-                        {totalItems}
-                    </strong>
-                </div>
-
-                <div class="summaryRow totalRow">
-                    <span>Total Amount</span>
-                    <strong>₹{totalAmount}</strong>
-                </div>
-
-
-                 <button
-                        className="checkOutBtn"
-                        onClick={handleCheckOut}
-                    >
-                        {isLoggedIn
-                            ? "Proceed to Checkout"
-                            : "Login to Checkout"
-                        }
-                    </button>
-                <Link to="/" className="continueLink">Continue Shopping</Link>
-
-        </div>
-      
-        </div>
-
-        {/* Confirmation Modal For Clearing Cart */}
-        { showConfirmation && (
+            {showConfirmation && (
                 <div className="modal">
                     <div className="modalContent">
                         <h3>Clear Cart?</h3>
                         <p>Are you sure you want to remove all items?</p>
-
-                        <button
-                            onClick={() => {
-                                clearCart();
-                                setShowConfirmation(false);
-                            }}
-                        >
-                            Yes
-                        </button>
-
-                        <button onClick={() => setShowConfirmation(false)}>
-                            No
-                        </button>
+                        <button onClick={() => { clearCart(); setShowConfirmation(false); }}>Yes</button>
+                        <button onClick={() => setShowConfirmation(false)}>No</button>
                     </div>
                 </div>
-            )  }
+            )}
 
-        {/* Confirmation Modal For Clearing Specific Item  */}
-
-        { showItemConfirmation && (
+            {showItemConfirmation && selectedItem && (
                 <div className="modal">
                     <div className="modalContent">
-                        <h3>Clear Item?</h3>
-                        <p>Are you sure you want to remove {" "} <strong>{selectedItem.name}</strong>?</p>
-
-                        <button
-                            onClick={() => {
-                                decreaseQuantity(selectedItem.id);
-                                setShowItemConfirmation(false);
-                            }}
-                        >
-                            Yes
-                        </button>
-
-                        <button onClick={() => setShowItemConfirmation(false)}>
-                            No
-                        </button>
+                        <h3>Remove Item?</h3>
+                        <p>Remove <strong>{selectedItem.name}</strong> from your cart?</p>
+                        <button onClick={() => { removeItem(selectedItem.id); setShowItemConfirmation(false); }}>Yes</button>
+                        <button onClick={() => setShowItemConfirmation(false)}>No</button>
                     </div>
                 </div>
-            )  }
-
-            {/* Login Modal */}
+            )}
 
             {showLogin && (
                 <div className="modalOverlay">
                     <div className="modalContent loginModal">
-                     <button className="closeBtn" onClick={()=>setShowLogin(false)}>X</button>
-                     <h2>Login</h2>
-                     <form onSubmit={handleLogin}>
-                        <div className="formGroup">
-                            <label>Email:</label>
-                            <input 
-                                type="email" 
-                                name="email" 
-                                value={loginData.email} 
-                                onChange={handleLoginInput} 
-                            />
-                            {loginError.email && <span className="error">{loginError.email}</span>}
-                        </div>
-                        
-                        <div className="formGroup">
-                            <label>Password:</label>
-                            <input 
-                                type="password" 
-                                name="password" 
-                                value={loginData.password} 
-                                onChange={handleLoginInput} 
-                            />
-                            {loginError.password && <span className="error">{loginError.password}</span>}
-                        </div>
-                        
-                        <button type="submit">Login</button>
-                        {loginMessage && <span className="success">{loginMessage}</span>}
-                     </form>
-                     
-                        </div>    
+                        <button className="closeBtn" type="button" onClick={() => setShowLogin(false)} aria-label="Close">×</button>
+                        <h2>Login to Checkout</h2>
+                        <form onSubmit={handleLogin}>
+                            <div className="formGroup">
+                                <label htmlFor="username">Username</label>
+                                <input id="username" name="username" value={loginData.username} onChange={handleLoginInput} autoComplete="username" autoFocus />
+                            </div>
+                            <div className="formGroup">
+                                <label htmlFor="password">Password</label>
+                                <input id="password" type="password" name="password" value={loginData.password} onChange={handleLoginInput} autoComplete="current-password" />
+                            </div>
+                            {loginError && <p className="error">{loginError}</p>}
+                            <button type="submit">Login & Pay</button>
+                        </form>
                     </div>
-                
+                </div>
             )}
-    </section>
-   )
+        </section>
+    );
 }
 
 export default Cart;

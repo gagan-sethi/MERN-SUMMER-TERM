@@ -325,6 +325,13 @@ color:#d97706;
   font-weight: bold;
 }
 
+.cartItemRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+}
+
 .cartSummary{
   background-color: #fff7ed;
   border-radius: 15px;
@@ -370,6 +377,27 @@ color:#d97706;
 .checkOutBtn:hover{
   background-color: #d97706;
   transform: translateY(-3px);
+}
+
+.checkOutBtn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+
+.loggedInAs,
+.checkoutMessage {
+  margin: 14px 0 0;
+  font-size: 14px;
+}
+
+.checkoutMessage {
+  color: #b45309;
+}
+
+.checkoutSuccess {
+  color: #15803d;
+  font-weight: 600;
 }
 
 
@@ -459,10 +487,79 @@ color:#d97706;
   /* Login Modal Styles */
 
   .modalOverlay{
-    position:relative;
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 1100;
+  }
+
+  .loginModal {
+    position: relative;
+    width: min(360px, calc(100vw - 70px));
+    text-align: left;
+  }
+
+  .loginModal h2 {
+    margin: 0 0 22px;
+    color: #111827;
+  }
+
+  .loginModal .closeBtn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #111827;
+    font-size: 22px;
+  }
+
+  .formGroup {
+    margin-bottom: 16px;
+  }
+
+  .formGroup label {
+    display: block;
+    margin-bottom: 6px;
+    color: #374151;
+    font-weight: 600;
+  }
+
+  .formGroup input {
+    box-sizing: border-box;
     width: 100%;
-    max-width: 440px;
-    padding:30px;
-    border-radius: 18px;
-    background:white;
+    padding: 11px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font: inherit;
+  }
+
+  .loginModal form > button {
+    width: 100%;
+    margin: 4px 0 0;
+    background: #111827;
+    color: white;
+  }
+
+  .loginModal .error {
+    color: #dc2626;
+    font-size: 14px;
+  }
+
+  @media (max-width: 760px) {
+    .cartLayout {
+      grid-template-columns: 1fr;
+    }
+
+    .cartSummary {
+      position: static;
+    }
   }

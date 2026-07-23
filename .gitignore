@@ -1,4 +1,6 @@
 /key-shop/node_modules
 /key-shop-apis/node_modules
 node_modules
-
+**/.env
+**/.env.*
+!**/.env.example
